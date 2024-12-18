@@ -8,8 +8,9 @@ networks:
 services:
   vote:
     image: xmarkus/vote:latest
+    build: ./vote
     ports:
-      - 5000:80
+      - "5000:80"
     depends_on:
       - redis
     networks:
@@ -19,8 +20,8 @@ services:
     image: redis:alpine
     networks:
       - instavote
-      
-  db:
+
+  db:  # Fixed indentation
     image: postgres:15-alpine
     environment:
       POSTGRES_USER: "postgres"
@@ -29,15 +30,16 @@ services:
       - "db-data:/var/lib/postgresql/data"
       - "./healthchecks:/healthchecks"
     healthcheck:
-      test: /healthchecks/postgres.sh
-      interval: "5s"
+      test: ["CMD-SHELL", "/healthchecks/postgres.sh"]  # Corrected syntax for test
+      interval: 5s
     networks:
-      - instavote  
-      
+      - instavote
+
   result:
     image: xmarkus/result:latest
+    build: ./result
     ports:
-      - 5001:80
+      - "5001:80"
     depends_on:
       - db
     networks:
@@ -45,8 +47,10 @@ services:
 
   worker:
     image: xmarkus/worker:latest
+    build: ./worker
     depends_on:
       - redis
       - db
     networks:
       - instavote
+
