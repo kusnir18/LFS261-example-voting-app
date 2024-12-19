@@ -195,29 +195,27 @@ pipeline {
       echo 'Running Integration Tests on vote app' 
       dir('vote'){ 
         sh 'sh integration_test.sh' 
+        } 
       } 
     } 
-} 
 
-
-    stage('vote-docker-package') {
-      agent any
-      steps {
+  stage('vote-docker-package') {
+    agent any
+    steps {
         echo 'Packaging vote app with docker'
-	echo “${env.BUILD_ID}”
-	echo “${env.GIT_COMMIT}”
+        echo "${env.BUILD_ID}"
+        echo "${env.GIT_COMMIT}"
         script {
-          docker.withRegistry('https://index.docker.io/v1/', 'dockerlogin') {
-            // ./vote is the path to the Dockerfile that Jenkins will find from the Github repo
-            def voteImage = docker.build("xmarkus/vote:${env.BUILD_ID}", "./vote")
-            voteImage.push()
-            voteImage.push("${env.BRANCH_NAME}")
-            voteImage.push("latest")
-          }
+            docker.withRegistry('https://index.docker.io/v1/', 'dockerlogin') {
+                // ./vote is the path to the Dockerfile that Jenkins will find from the Github repo
+                def voteImage = docker.build("xmarkus/vote:${env.BUILD_ID}", "./vote")
+                voteImage.push()
+                voteImage.push("${env.BRANCH_NAME}")
+                voteImage.push("latest")
+            }
         }
-
-      }
     }
+}
 
     
   }
