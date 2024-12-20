@@ -188,9 +188,10 @@ pipeline {
         echo 'Packaging vote app with docker'
         script {
           docker.withRegistry('https://index.docker.io/v1/', 'dockerlogin') {
+            def sanitizedBranchName = env.BRANCH_NAME.replaceAll('[^a-zA-Z0-9_.-]', '-')
             def voteImage = docker.build("xmarkus/vote:v${env.BUILD_ID}", './vote')
             voteImage.push()
-            voteImage.push("${env.BRANCH_NAME}")
+            voteImage.push("${sanitizedBranchName}")
             voteImage.push('latest')
           }
         }
