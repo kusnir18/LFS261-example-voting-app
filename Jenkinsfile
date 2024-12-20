@@ -188,11 +188,16 @@ pipeline {
         echo 'Packaging vote app with docker'
         script {
           docker.withRegistry('https://index.docker.io/v1/', 'dockerlogin') {
+            // Sanitize the branch name for use as a Docker tag
             def sanitizedBranchName = env.BRANCH_NAME.replaceAll('[^a-zA-Z0-9_.-]', '-')
-            def voteImage = docker.build("xmarkus/vote:v${env.BUILD_ID}", './vote')
+            
+            // Build and tag the Docker image
+            def voteImage = docker.build("xmarkus/vote:v${env.BUILD_ID}", "./vote")
+            
+            // Push the image with different tags
             voteImage.push()
-            voteImage.push("${sanitizedBranchName}")
-            voteImage.push('latest')
+            voteImage.push("${sanitizedBranchName}") // Use sanitized branch name
+            voteImage.push("latest")
           }
         }
       }
@@ -200,7 +205,9 @@ pipeline {
 
     stage('Sonarqube') {
       agent any
-      // when { branch 'master' }
+      when {
+        branch 'master'
+      }
       environment {
         sonarpath = tool 'SonarScanner'
       }
@@ -212,17 +219,30 @@ pipeline {
       }
     }
 
+
     stage('Quality Gate') {
       steps {
-        timeout(time: 1, unit: 'HOURS') {
-          waitForQualityGate abortPipeline: true
+        script {
+          timeout(time: 1, unit: 'HOURS') {
+            def qualityGate = waitForQualityGate()
+            
+            // Check if the quality gate status is 'NONE'
+            if (qualityGate?.status == 'NONE') {
+              echo "No quality gate set, proceeding without failure."
+            } else if (qualityGate?.status != 'OK') {
+              // Abort pipeline if the quality gate is not OK (error or failed)
+              error "Quality gate failed: ${qualityGate.status}"
+            }
+          }
         }
       }
     }
 
     stage('deploy to dev') {
       agent any
-      // when { branch 'master' }
+      when {
+        branch 'master'
+      }
       steps {
         echo 'Deploy instavote app with docker compose'
         sh 'docker-compose up -d'
