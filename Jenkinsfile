@@ -219,23 +219,14 @@ pipeline {
       }
     }
 
-
-    stage('Quality Gate') {
-      steps {
-        script {
-          timeout(time: 1, unit: 'HOURS') {
-            def qualityGate = waitForQualityGate()
-            
-            // Check if the quality gate status is 'NONE'
-            if (qualityGate?.status == 'NONE') {
-              echo "No quality gate set, proceeding without failure."
-            } else if (qualityGate?.status != 'OK') {
-              // Abort pipeline if the quality gate is not OK (error or failed)
-              error "Quality gate failed: ${qualityGate.status}"
+    stage("Quality Gate") {
+        steps {
+            timeout(time: 1, unit: 'HOURS') {
+                // Parameter indicates whether to set pipeline to UNSTABLE if Quality Gate fails
+                // true = set pipeline to UNSTABLE, false = don't
+                waitForQualityGate abortPipeline: true
             }
-          }
         }
-      }
     }
 
     stage('deploy to dev') {
